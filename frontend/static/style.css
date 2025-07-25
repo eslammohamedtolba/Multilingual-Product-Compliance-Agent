@@ -1,0 +1,465 @@
+:root {
+    /* Updated background color from the image */
+    --bg-color: #F8F8F8; /* A very light grey/off-white from the image background */
+    --text-color: #333333; /* Darker text for readability on light background */
+
+    --input-bg-color: #333333; /* Keep input bar as is */
+    --input-text-color: #e0e0e0; /* Keep input text as is */
+
+    /* Updated colors for messages from the image */
+    --human-msg-bg: #4e7ed1; /* Blue from the human message bubble */
+    --ai-msg-bg: #bababa; /* Light grey from the AI message bubble */
+    
+    --button-bg-color: #555555; /* Keep send/file upload buttons as is */
+    --button-hover-bg-color: #777777; /* Keep send/file upload buttons as is */
+    --button-disabled-bg-color: #3a3a3a; /* Keep send/file upload buttons as is */
+    --border-color: #555555; /* Keep borders as is */
+    --footer-height: 80px; /* Height of the input bar area */
+    --header-height: 60px; /* Define header height as a variable */
+}
+
+/* Universal box-sizing for consistency */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color); /* Apply new background color */
+    color: var(--text-color); /* Apply new general text color */
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw; /* Explicitly set width */
+    overflow: hidden; /* Hide main body scrollbar, chat-container will scroll */
+}
+
+/* Custom Scrollbar for Webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    background-color: transparent; /* Make track background transparent */
+}
+
+::-webkit-scrollbar-track {
+    background: transparent; /* Ensure track is truly transparent */
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888; /* Slightly lighter grey for thumb */
+    border-radius: 4px;
+    border: 2px solid transparent; /* Add transparent border to make thumb thinner visually */
+    background-clip: padding-box; /* Ensures background does not extend into the border area */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+
+.chat-header {
+    padding: 10px 20px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: var(--header-height); /* Ensure space for header */
+    flex-shrink: 0; /* Prevent header from shrinking */
+    position: fixed; /* Make header fixed */
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: transparent; /* Make header background transparent */
+    z-index: 10; /* Ensure it stays on top of content */
+}
+
+#clear-history-button {
+    background-color: #DC3545; /* Red color for clear history button */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease;
+}
+
+#clear-history-button:hover:not(:disabled) {
+    background-color: #C82333; /* Slightly darker red on hover */
+}
+
+#clear-history-button:disabled {
+    background-color: #A0A0A0; /* Lighter grey for disabled red button */
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#clear-history-button svg {
+    fill: white;
+}
+
+.chat-container {
+    flex-grow: 1; /* Allows chat messages to take up available space */
+    overflow-y: auto; /* Enables scrolling for chat messages */
+    padding: 20px;
+    /* Adjusted padding to account for fixed header and footer */
+    padding-top: calc(var(--header-height) + 20px); /* Space for header + additional padding */
+    padding-bottom: calc(var(--footer-height) + 30px); /* Space for footer + additional padding */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    scroll-behavior: smooth;
+    min-height: 0; /* Essential for flex items with overflow */
+    width: 100%; /* Ensure it takes full width within its parent */
+    position: relative; /* Needed to make z-index effective if using shadow on fixed elements */
+}
+
+/* New: Wrapper for messages to group file info and bubble */
+.message-wrapper {
+    display: flex;
+    flex-direction: column; /* Stack file info and bubble vertically */
+    max-width: 70%; /* Apply max-width to the wrapper */
+    /* align-items: flex-end; -- REMOVED: Alignment of wrapper controlled by JS */
+}
+
+/* New: Styling for the file name display above the human message */
+.file-name-display {
+    background-color: #e0e0e0; /* Light grey background for file name box */
+    color: var(--text-color);
+    padding: 10px 15px; /* More padding as seen in the image */
+    border-radius: 20px; /* Rounded corners for the file box */
+    font-size: 0.9em; /* Slightly larger font than before, but still smaller than main message */
+    margin-bottom: 3px; /* Space between filename box and message bubble */
+    width: fit-content; /* Make the box fit the content size - CRITICAL */
+    white-space: nowrap; /* Prevent file name text from wrapping unnecessarily */
+    overflow: hidden; /* Hide overflowing text */
+    text-overflow: ellipsis; /* Add ellipsis for long file names */
+    display: flex; /* Use flexbox to align icon and text */
+    align-items: center; /* Vertically center icon and text */
+    justify-content: flex-start; /* Align contents to the start */
+    border: none; /* No border as per the image */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* A subtle shadow similar to AI messages */
+    align-self: flex-end; /* CRITICAL: This makes it align to the right within the wrapper */
+}
+
+/* Add this new rule for the SVG inside the file-name-display */
+.file-name-display svg {
+    vertical-align: middle; /* Align icon with text */
+    margin-right: 5px; /* Space between icon and filename */
+    fill: var(--text-color); /* Ensure the icon color matches the text */
+}
+
+.message-bubble {
+    padding: 12px 18px;
+    border-radius: 20px;
+    word-wrap: break-word; /* Ensures long words break and wrap */
+    white-space: pre-wrap; /* Preserves whitespace and wraps text */
+    line-height: 1.5;
+    font-size: 1rem;
+    display: block; /* Ensure it behaves as a block element within the flex column */
+    max-width: 100%; /* Ensure it doesn't exceed its parent wrapper's width */
+}
+
+.human-message {
+    background-color: var(--human-msg-bg);
+    color: white !important;
+    border-bottom-right-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    width: fit-content;
+    display: flex;
+    align-self: flex-end;
+}
+
+.ai-message {
+    background-color: var(--ai-msg-bg);
+    color: #333333;
+    border-bottom-left-radius: 5px; 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Soft, subtle shadow */
+}
+
+.system-message {
+    background-color: #666;
+    color: white;
+    text-align: center;
+    padding: 8px 15px;
+    border-radius: 10px;
+    max-width: 80%;
+    align-self: center;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+/* Specific styling for elements INSIDE the AI message bubble (for Markdown rendering) */
+.ai-message p,
+.ai-message ul,
+.ai-message h3,
+.ai-message h2,
+.ai-message h1 { /* Added h1 and h2 for completeness */
+    margin: 0; /* Remove default margins */
+    padding: 0; /* Remove default padding */
+    font-size: 1rem; /* Reset font size for consistency */
+    line-height: 1.5; /* Reset line height for consistency */
+}
+
+.ai-message h1 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-top: 15px;
+    margin-bottom: 8px;
+    border-bottom: 2px solid #666;
+    padding-bottom: 5px;
+}
+
+.ai-message h2 {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    color: #2a2a2a;
+}
+
+.ai-message h3 {
+    margin-top: 10px; /* Add some space above headings */
+    margin-bottom: 5px;
+    font-size: 1.1rem; /* Slightly larger for headings */
+    font-weight: bold; /* Ensure h3 is bold */
+}
+
+.ai-message p + p {
+    margin-top: 1em; /* Add space between paragraphs */
+}
+
+.ai-message ul {
+    list-style-type: disc; /* Default bullet points */
+    margin-left: 20px; /* Indent lists */
+    padding-left: 0;
+    margin-top: 5px; /* Adjust spacing around lists */
+    margin-bottom: 5px;
+}
+
+.ai-message ul li {
+    margin-bottom: 3px; /* Space between list items */
+}
+
+.ai-message strong {
+    font-weight: bold; /* Ensure strong tags are bold */
+    color: #1a1a1a; /* Darker color for better contrast */
+}
+
+.ai-message em {
+    font-style: italic; /* Ensure em tags are italic */
+    color: #444;
+}
+
+.ai-message hr { /* Changed from .text-separator for standard markdown HR */
+    border: none;
+    border-top: 2px solid #888; /* Slightly thicker and darker for visibility */
+    margin: 15px 0;
+    opacity: 0.6;
+    width: 100%;
+}
+
+/* Remove extra spacing from consecutive <br> tags (if generated) */
+.ai-message br + br {
+    display: none;
+}
+
+/* Ensure proper spacing for formatted content */
+.ai-message br + strong,
+.ai-message br + h1,
+.ai-message br + h2,
+.ai-message br + h3,
+.ai-message br + ul,
+.ai-message br + p { /* Added p for clarity */
+    margin-top: 10px;
+}
+
+/* Style for quoted text (optional enhancement) */
+.ai-message blockquote {
+    border-left: 4px solid #666;
+    padding-left: 15px;
+    margin: 10px 0;
+    font-style: italic;
+    color: #555;
+    background-color: rgba(0,0,0,0.05);
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+/* Enhanced readability for formatted messages */
+.ai-message {
+    line-height: 1.6; /* Increased line height for better readability */
+}
+
+/* Ensure RTL text (Arabic) displays correctly in formatted content */
+.ai-message [dir="rtl"],
+.ai-message .rtl-text {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Style for code blocks (if needed) */
+.ai-message code {
+    background-color: rgba(0,0,0,0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.ai-message pre {
+    background-color: rgba(0,0,0,0.1);
+    padding: 10px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 10px 0;
+}
+
+.ai-message pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+
+/* Input Area Footer and elements within */
+.input-area-footer {
+    position: fixed; /* Keep footer fixed */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: transparent; /* Make footer background transparent */
+    padding: 15px 20px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: var(--footer-height);
+    flex-shrink: 0; /* Prevent footer from shrinking */
+    z-index: 10; /* Ensure it stays on top of content */
+    /* Add a subtle shadow if you want it to appear floating over the content */
+    /* box-shadow: 0 -2px 5px rgba(0,0,0,0.1); */
+}
+
+.input-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 800px; /* Limit input bar width for better aesthetics */
+    background-color: var(--input-bg-color); /* Keep as is */
+    border-radius: 25px;
+    padding: 8px 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.file-upload-button {
+    background-color: var(--button-bg-color); /* Keep as is */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.file-upload-button:hover {
+    background-color: var(--button-hover-bg-color); /* Keep as is */
+}
+
+.file-upload-button svg {
+    fill: white;
+    width: 20px;
+    height: 20px;
+}
+
+.file-upload-button input[type="file"] {
+    display: none; /* Hide the default file input */
+}
+
+.file-name {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-right: 10px;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#user-input {
+    flex-grow: 1;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    color: var(--input-text-color); /* Keep as is */
+    padding: 10px 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: none; /* Disable textarea resizing if using textarea */
+    height: auto; /* For single line input */
+    min-height: 24px; /* Ensure some height for input */
+}
+
+#user-input::placeholder {
+    color: #999;
+}
+
+#send-button {
+    background-color: var(--button-bg-color); /* Keep as is */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+#send-button:hover:not(:disabled) {
+    background-color: var(--button-hover-bg-color); /* Keep as is */
+}
+
+#send-button:disabled {
+    background-color: var(--button-disabled-bg-color); /* Keep as is */
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#send-button svg {
+    fill: white;
+    width: 20px;
+    height: 20px;
+    transform: rotate(0deg); /* Arrow points straight to the right */
+}
+
+/* --- Spinner for Typing Indicator --- */
+.typing-indicator {
+    display: flex; /* Use flexbox to align spinner and text */
+    align-items: center; /* Vertically center items */
+    gap: 8px; /* Space between spinner and text */
+    max-width: fit-content; /* Make the width fit its content */
+    align-self: flex-start; /* Align it to the left, like AI messages */
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1); /* Light grey border */
+    border-top: 4px solid var(--text-color); /* Darker border on top (or a contrasting color) */
+    border-radius: 50%; /* Makes it a circle */
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite; /* Apply the spin animation */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
